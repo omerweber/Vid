@@ -1,0 +1,75 @@
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from statsmodels.formula.api import ols
+sns.set_style("darkgrid")
+
+df = pd.read_csv("C:\\Users\\omerw\\OneDrive\\Desktop\\Video Games Dataset.csv")
+vid_games = df.copy()
+
+vid_games.dropna(subset=["Publisher"], inplace=True)
+vid_games.fillna(0, inplace=True)
+by_year = vid_games[["Year", "Global_Sales"]]
+
+global_by_year = by_year.groupby("Year")["Global_Sales"].sum()
+plt.figure()
+pl1 = global_by_year.plot()
+pl1.set_title("Number of sales vs Years")
+pl1.set_xlabel("Years")
+pl1.set_ylabel("Number of global sales")
+
+genre = vid_games["Genre"].value_counts()
+plt.figure()
+pl1 = genre.plot(kind="bar", color="green")
+pl1.set_title("Number of every genre")
+pl1.set_xlabel("Genre")
+pl1.set_ylabel("Number of games")
+
+publishers = vid_games.groupby("Publisher")[["Publisher", "NorthAmerica_Sales", "EurpeanUnion_Sales", "Japan_Sales"]].sum()
+publishers.reset_index(inplace=True)
+fig, axes = plt.subplots(1, 3, figsize=(30, 15), sharey=True)
+fig.suptitle("Publisher Sales across America, Europe and Japan")
+
+sns.barplot(ax=axes[0], x="Publisher", y="NorthAmerica_Sales", data=publishers)
+axes[0].set_title("Publisher sales in North America")
+axes[0].tick_params("x", rotation=90)
+
+sns.barplot(ax=axes[1], x="Publisher", y="EurpeanUnion_Sales", data=publishers)
+axes[1].set_title("Publisher sales in Europe")
+axes[1].tick_params("x", rotation=90)
+
+sns.barplot(ax=axes[2], x="Publisher", y="Japan_Sales", data=publishers)
+axes[2].set_title("Publisher sales in Japan")
+axes[2].tick_params("x", rotation=90)
+
+plt.figure()
+pl1 = sns.countplot(x="Platform", data=vid_games)
+pl1.set_title("Number of games in every platform")
+pl1.set_ylabel("Number of games")
+plt.xticks(rotation=45)
+
+top5 = vid_games.iloc[0:5][["Rank", "Name"]]
+figi, axi = plt.subplots()
+axi.axis("off")
+axi.axis("tight")
+axi.table(cellText=top5.values, colLabels=top5.columns, loc="center", cellLoc="center", colColours=["green", "red"])
+axi.set_title("The top 5 ranked games", {"fontsize": 30, "horizontalalignment": "center", "verticalalignment":"baseline"})
+
+mdl = ols("Global_Sales ~ EurpeanUnion_Sales", data=vid_games).fit()
+eurs = pd.DataFrame({"EurpeanUnion_Sales": np.arange(1.3, 19.5)})
+prediction = eurs.assign(Global_Sales=mdl.predict(eurs))
+
+figi, axi = plt.subplots()
+axi.axis("off")
+axi.axis("tight")
+axi.table(cellText=prediction.values, colLabels=prediction.columns, loc="lower center", cellLoc="center", colColours=["blue", "red"])
+axi.set_title("Predicted global sales based on European sales")
+figi.tight_layout()
+
+plt.figure()
+pl1 = sns.scatterplot(x="EurpeanUnion_Sales", y="Global_Sales", data=vid_games, size="Global_Sales", alpha=0.4, color="red")
+pl1.set_title("European Union sales vs Global sales")
+pl1.set_ylabel("Global sales")
+pl1.set_xlabel("European Union sales")
+plt.show()
